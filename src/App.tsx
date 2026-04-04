@@ -200,7 +200,7 @@ const translations = {
 };
 
 export default function App() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>({ uid: 'admin', email: 'admin@dioskos.com' });
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [lang, setLang] = useState('es'); 
