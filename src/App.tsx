@@ -201,7 +201,7 @@ const translations = {
 
 export default function App() {
   const [user, setUser] = useState<any>({ uid: 'admin', email: 'admin@dioskos.com' });
-  const [loadingAuth, setLoadingAuth] = useState(true);
+  const [loadingAuth, setLoadingAuth] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [lang, setLang] = useState('es'); 
   const t = translations[lang];
@@ -288,16 +288,7 @@ export default function App() {
     setViewState('create');
     setCurrentDoc({ type });
   };
-
-  if (loadingAuth) {
-    return <div className="min-h-screen bg-gray-100 flex items-center justify-center font-sans text-slate-500">{t.connecting}</div>;
-  }
-
-  // --- RENDER LOGIN SCREEN IF NO USER ---
-  if (!user) {
-    return <LoginScreen t={t} lang={lang} setLang={setLang} />;
-  }
-
+  
   // --- RENDER MAIN APP IF LOGGED IN ---
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col md:flex-row font-sans text-slate-800">
