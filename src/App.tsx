@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, onSnapshot, doc, setDoc } from 'firebase/firestore';
+import { auth, db } from './src/firebase';
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { collection, onSnapshot, doc, setDoc, query, getDocs, addDoc } from 'firebase/firestore';
 import { 
   Users, 
   FileText, 
