@@ -21,9 +21,9 @@ import {
 // --- CONFIGURACIÓN DE FIREBASE ---
 const firebaseConfig = {
   apiKey: "AIzaSyAlwuMih2vA0qxEgT7xjmbg-9WiKCHiIoc",
-  authDomain: "dioskos-app.firebaseapp.com",
-  projectId: "dioskos-app",
-  storageBucket: "dioskos-app.firebasestorage.app",
+  authDomain: "dioskos-app-oficial.firebaseapp.com", // Agregué -oficial
+  projectId: "dioskos-app-oficial",                  // Agregué -oficial
+  storageBucket: "dioskos-app-oficial.firebasestorage.app", // Agregué -oficial
   messagingSenderId: "253998926019",
   appId: "1:253998926019:web:1e1394045a112d5adb7a76"
 };
