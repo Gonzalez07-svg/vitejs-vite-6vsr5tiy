@@ -390,7 +390,6 @@ export default function App() {
                         <td className="p-5 font-bold text-slate-800">{getClient(doc.clientId).name}</td>
                         <td className="p-5 font-black text-slate-900">${doc.total.toFixed(2)}</td>
                         <td className="p-5 text-right flex justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                          {/* BOTONES DE ACCIÓN: VER, EDITAR, ELIMINAR */}
                           <button onClick={() => { setCurrentDoc(doc); setViewState('view'); }} className="bg-white border border-slate-200 text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-4 py-2 rounded-lg font-bold text-sm shadow-sm transition-colors" title={t.viewPrint}>
                             {t.viewPrint}
                           </button>
@@ -560,14 +559,9 @@ function ClientManager({ clients, onSaveClient, onDeleteClient, t, startAdding, 
               <p className="text-slate-600 text-sm flex"><span className="font-bold w-12 text-slate-500">Tel:</span> <span>{client.phone || t.unregistered}</span></p>
               <p className="text-slate-600 text-sm flex"><span className="font-bold w-12 text-slate-500">Dir:</span> <span>{client.address || t.unregistered}</span></p>
             </div>
-            {/* Botones de Editar y Borrar Cliente */}
             <div className="absolute top-5 right-5 flex gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => { setClientForm(client); setIsAdding(true); }} className="text-amber-500 hover:text-amber-600 p-1.5 bg-amber-50 rounded-lg transition-colors" title={t.edit}>
-                <Edit className="w-4 h-4" />
-              </button>
-              <button onClick={() => onDeleteClient(client.id)} className="text-red-400 hover:text-red-600 p-1.5 bg-red-50 rounded-lg transition-colors" title={t.delete}>
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <button onClick={() => { setClientForm(client); setIsAdding(true); }} className="text-amber-500 hover:text-amber-600 p-1.5 bg-amber-50 rounded-lg transition-colors" title={t.edit}><Edit className="w-4 h-4" /></button>
+              <button onClick={() => onDeleteClient(client.id)} className="text-red-400 hover:text-red-600 p-1.5 bg-red-50 rounded-lg transition-colors" title={t.delete}><Trash2 className="w-4 h-4" /></button>
             </div>
           </div>
         ))}
@@ -577,14 +571,14 @@ function ClientManager({ clients, onSaveClient, onDeleteClient, t, startAdding, 
 }
 
 function DocumentForm({ type, initialDoc, clients, onSave, onCancel, t }: any) {
-  // Inicializamos el formulario con los datos de "initialDoc" si existe (Modo Edición)
   const [clientId, setClientId] = useState(initialDoc?.clientId || '');
   const [date, setDate] = useState(initialDoc?.date || new Date().toISOString().split('T')[0]);
   const [items, setItems] = useState<any[]>(initialDoc?.items || []);
   const [notes, setNotes] = useState(initialDoc?.notes || '');
   
   const [newItem, setNewItem] = useState({ desc: '', qty: 1, price: '' as number|string });
-  const total = items.reduce((sum, item) => sum + (item.qty * item.price), 0);
+  
+  const total = items.reduce((sum, item) => sum + ((Number(item.qty) || 0) * (Number(item.price) || 0)), 0);
 
   const handleAddItem = (e: any) => {
     e.preventDefault(); 
@@ -593,15 +587,35 @@ function DocumentForm({ type, initialDoc, clients, onSave, onCancel, t }: any) {
     setNewItem({ desc: '', qty: 1, price: '' });
   };
 
+  // Función mágica para editar los valores en línea en la tabla
+  const handleUpdateItem = (id: number, field: string, value: string) => {
+    setItems(items.map(item => {
+      if (item.id === id) {
+        let parsedValue: string | number = value;
+        if (field === 'qty' || field === 'price') {
+          parsedValue = value === '' ? '' : Number(value);
+        }
+        return { ...item, [field]: parsedValue };
+      }
+      return item;
+    }));
+  };
+
   const handleSave = () => {
     if (!clientId) return alert(t.errClient);
     if (items.length === 0) return alert(t.errItems);
     
-    // Si estamos editando, mantenemos el mismo ID y Número de Documento. Si no, creamos nuevos.
+    // Convertimos cualquier string vacío a 0 por seguridad antes de guardar
+    const cleanItems = items.map(item => ({
+      ...item,
+      qty: Number(item.qty) || 1,
+      price: Number(item.price) || 0
+    }));
+
     const docId = initialDoc?.id || Date.now().toString();
     const shortId = initialDoc?.docNumber || Math.floor(10000 + Math.random() * 90000).toString();
     
-    onSave({ id: docId, docNumber: shortId, type, clientId, date, items, total, notes });
+    onSave({ id: docId, docNumber: shortId, type, clientId, date, items: cleanItems, total, notes });
   };
 
   return (
@@ -630,7 +644,7 @@ function DocumentForm({ type, initialDoc, clients, onSave, onCancel, t }: any) {
       <div className="mb-10 bg-slate-50/70 p-7 rounded-2xl border border-slate-200">
         <h3 className="font-extrabold text-slate-800 mb-5 border-b pb-3 uppercase tracking-wide text-sm">{t.details}</h3>
         <div className="flex flex-col md:flex-row gap-4 items-end mb-8">
-          <div className="flex-1 w-full"><label className="block text-xs font-bold text-slate-600 mb-2.5">{t.desc}</label><input type="text" placeholder="Ej. Puerta de madera, Instalación..." value={newItem.desc} onChange={e => setNewItem({...newItem, desc: e.target.value})} className="w-full p-3.5 border rounded-xl shadow-inner bg-white" /></div>
+          <div className="flex-1 w-full"><label className="block text-xs font-bold text-slate-600 mb-2.5">{t.desc}</label><input type="text" placeholder="Ej. Puerta de madera..." value={newItem.desc} onChange={e => setNewItem({...newItem, desc: e.target.value})} className="w-full p-3.5 border rounded-xl shadow-inner bg-white" /></div>
           <div className="w-full md:w-28"><label className="block text-xs font-bold text-slate-600 mb-2.5">{t.qty}</label><input type="number" min="1" value={newItem.qty} onChange={e => setNewItem({...newItem, qty: Number(e.target.value)})} className="w-full p-3.5 border rounded-xl shadow-inner bg-white" /></div>
           <div className="w-full md:w-36"><label className="block text-xs font-bold text-slate-600 mb-2.5">{t.unitPrice} ($)</label><input type="number" min="0" placeholder="0.00" value={newItem.price} onChange={e => setNewItem({...newItem, price: e.target.value})} className="w-full p-3.5 border rounded-xl shadow-inner bg-white" /></div>
           <button onClick={handleAddItem} className="w-full md:w-auto bg-slate-800 hover:bg-slate-950 text-white p-3.5 rounded-xl flex justify-center items-center font-bold transition-colors"><Plus className="w-5 h-5 md:mr-0 mr-2" /> <span className="md:hidden inline">Agregar</span></button>
@@ -639,12 +653,46 @@ function DocumentForm({ type, initialDoc, clients, onSave, onCancel, t }: any) {
         {items.length > 0 && (
           <div className="bg-white border rounded-xl overflow-hidden shadow-sm animate-in zoom-in-95 duration-300">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-100 text-slate-600"><tr><th className="p-4 font-bold uppercase tracking-wider">{t.printDesc}</th><th className="p-4 font-bold text-center uppercase tracking-wider">{t.qty}</th><th className="p-4 font-bold text-right uppercase tracking-wider">{t.unitPrice}</th><th className="p-4 font-bold text-right uppercase tracking-wider">{t.subtotal}</th><th></th></tr></thead>
+              <thead className="bg-slate-100 text-slate-600"><tr><th className="p-4 font-bold uppercase tracking-wider">{t.printDesc}</th><th className="p-4 font-bold text-center uppercase tracking-wider">{t.qty}</th><th className="p-4 font-bold text-right uppercase tracking-wider">{t.printPrice}</th><th className="p-4 font-bold text-right uppercase tracking-wider">{t.subtotal}</th><th></th></tr></thead>
               <tbody className="divide-y divide-slate-100">
                 {items.map((it: any) => (
                   <tr key={it.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="p-4 font-medium text-slate-800 pr-10">{it.desc}</td><td className="p-4 text-center text-slate-700 font-bold">{it.qty}</td><td className="p-4 text-right text-slate-600 font-medium">${it.price.toFixed(2)}</td><td className="p-4 text-right font-black text-slate-950">${(it.qty * it.price).toFixed(2)}</td>
-                    <td className="p-4 text-center"><button onClick={() => setItems(items.filter(i => i.id !== it.id))} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button></td>
+                    {/* Campos editables integrados en la tabla */}
+                    <td className="p-4 pr-6">
+                      <input 
+                        type="text" 
+                        value={it.desc} 
+                        onChange={(e) => handleUpdateItem(it.id, 'desc', e.target.value)} 
+                        className="w-full bg-transparent border-b border-dashed border-slate-300 focus:border-blue-500 focus:border-solid outline-none p-1 font-medium text-slate-800 transition-colors" 
+                      />
+                    </td>
+                    <td className="p-4">
+                      <input 
+                        type="number" 
+                        min="1" 
+                        value={it.qty} 
+                        onChange={(e) => handleUpdateItem(it.id, 'qty', e.target.value)} 
+                        className="w-16 mx-auto text-center bg-transparent border-b border-dashed border-slate-300 focus:border-blue-500 focus:border-solid outline-none p-1 font-bold text-slate-700 transition-colors block" 
+                      />
+                    </td>
+                    <td className="p-4">
+                      <div className="flex justify-end items-center">
+                        <span className="text-slate-500 font-medium mr-1">$</span>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          value={it.price} 
+                          onChange={(e) => handleUpdateItem(it.id, 'price', e.target.value)} 
+                          className="w-20 text-right bg-transparent border-b border-dashed border-slate-300 focus:border-blue-500 focus:border-solid outline-none p-1 font-medium text-slate-600 transition-colors" 
+                        />
+                      </div>
+                    </td>
+                    <td className="p-4 text-right font-black text-slate-950">
+                      ${((Number(it.qty) || 0) * (Number(it.price) || 0)).toFixed(2)}
+                    </td>
+                    <td className="p-4 text-center">
+                      <button onClick={() => setItems(items.filter(i => i.id !== it.id))} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -682,21 +730,19 @@ function PrintableView({ doc, client, settings, lang, t, onBack }: any) {
     return d.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
-  // Efecto para cambiar el título del documento y así nombrar el PDF automáticamente
   useEffect(() => {
     const originalTitle = document.title;
     const typeName = doc.type === 'proforma' ? 'Proforma' : 'Recibo';
     document.title = `${typeName} - ${client.name}`;
     
     return () => {
-      document.title = originalTitle; // Restaura el título original al salir
+      document.title = originalTitle; 
     };
   }, [doc, client]);
 
   return (
     <div className="max-w-[850px] mx-auto bg-white print:p-0 print:shadow-none animate-in fade-in duration-300">
       
-      {/* MAGIA CSS PARA OCULTAR FECHA, LINK Y NÚMERO DE PÁGINA DEL NAVEGADOR Y QUITAR MÁRGENES */}
       <style>
         {`
           @media print {
@@ -712,22 +758,15 @@ function PrintableView({ doc, client, settings, lang, t, onBack }: any) {
         `}
       </style>
 
-      {/* Botones Flotantes (No salen en PDF) */}
       <div className="print:hidden flex justify-between items-center mb-8 bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-inner">
         <button onClick={onBack} className="flex items-center text-slate-600 hover:text-slate-950 font-bold bg-white px-5 py-2.5 rounded-xl border shadow-sm transition-all"><ArrowLeft className="w-5 h-5 mr-2.5" /> {t.back}</button>
         <button onClick={() => window.print()} className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-7 py-3 rounded-xl font-bold shadow-md shadow-blue-900/10 transition-all hover:shadow-lg"><Printer className="w-5 h-5 mr-2.5" /> {t.print}</button>
       </div>
 
-      {/* --- INICIO DEL DOCUMENTO A IMPRIMIR (COMPACTO) --- */}
       <div className="print-container relative bg-white min-h-[500px] print:min-h-0 mx-auto box-border overflow-hidden rounded-xl print:rounded-none">
-        
-        {/* Usamos un padding más pequeño (p-6) para ahorrar espacio vertical */}
         <div className="p-8 md:p-10 print:p-6">
-          
-          {/* LÍNEA AZUL GRUESA SUPERIOR */}
           <div className="h-2 w-full mb-6" style={{ backgroundColor: COLOR_BLUE }}></div>
 
-          {/* CABECERA: Info Empresa y Logo (Márgenes reducidos) */}
           <div className="flex justify-between items-start mb-6">
             <div className="text-sm font-medium space-y-0.5" style={{ color: "#777" }}>
               <p className="font-bold text-base mb-1" style={{ color: COLOR_BLUE }}>Diosko's Home Renovations LLC</p>
@@ -743,7 +782,6 @@ function PrintableView({ doc, client, settings, lang, t, onBack }: any) {
             </div>
           </div>
 
-          {/* TÍTULO Y FECHA (Márgenes reducidos) */}
           <div className="mb-6">
             <h2 className="text-2xl font-bold capitalize mb-1" style={{ color: COLOR_BLUE }}>
               {doc.type === 'proforma' ? t.printQuoteLabel : t.printInvoiceLabel}
@@ -753,14 +791,12 @@ function PrintableView({ doc, client, settings, lang, t, onBack }: any) {
             </p>
           </div>
 
-          {/* INFO DEL CLIENTE (Márgenes reducidos) */}
           <div className="mb-6 text-sm">
             <p className="font-bold text-slate-700 mb-1">{doc.type === 'proforma' ? t.printQuoteFor : t.printInvoiceFor}</p>
             <p className="text-slate-500"><span className="mr-1">{t.printClientName}</span> {client.name}</p>
             {client.address && <p className="text-slate-500"><span className="mr-1">{t.printJobAddress}</span> {client.address}</p>}
           </div>
 
-          {/* TABLA DE ITEMS (Padding interno reducido) */}
           <table className="w-full text-left border-collapse mb-1">
             <thead className="border-b-2" style={{ borderColor: COLOR_BLUE }}>
               <tr>
@@ -783,7 +819,6 @@ function PrintableView({ doc, client, settings, lang, t, onBack }: any) {
           </table>
           <div className="border-t mb-4" style={{ borderColor: '#e2e8f0' }}></div>
 
-          {/* SECCIÓN TOTALES (Márgenes reducidos) */}
           <div className="flex justify-end mb-6 pr-2">
             <div className="flex justify-between items-center w-64">
               <span className="text-base font-bold" style={{ color: COLOR_BLUE }}>{t.printTotal}</span>
@@ -791,7 +826,6 @@ function PrintableView({ doc, client, settings, lang, t, onBack }: any) {
             </div>
           </div>
 
-          {/* NOTAS (Márgenes reducidos) */}
           <div className="mt-4 pt-4 border-t border-slate-200">
             <h4 className="text-sm font-bold mb-2" style={{ color: COLOR_BLUE }}>{t.printNotesTitle}</h4>
             <ul className="text-slate-600 text-xs font-medium space-y-1 list-disc ml-5">
@@ -802,7 +836,6 @@ function PrintableView({ doc, client, settings, lang, t, onBack }: any) {
 
         </div>
       </div>
-      
     </div>
   );
 }
