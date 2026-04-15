@@ -71,7 +71,7 @@ const translations: any = {
     saveChanges: "Guardar Cambios",
     saved: "Guardado correctamente",
     printQuoteLabel: "PROFORMA",
-    printInvoiceLabel: "RECIBO DE PAGO",
+    printInvoiceLabel: "RECIBO",
     printIssued: "Fecha de Emisión:",
     printSubmitted: "Fecha:",
     printQuoteFor: "COTIZACIÓN PARA:",
@@ -671,7 +671,7 @@ function DocumentForm({ type, initialDoc, clients, onSave, onCancel, t }: any) {
 }
 
 // ==========================================
-// DISEÑO DEL PDF / IMPRESIÓN (ALTA GAMA Y SIN LINKS)
+// DISEÑO DEL PDF / IMPRESIÓN COMPACTO
 // ==========================================
 function PrintableView({ doc, client, settings, lang, t, onBack }: any) {
   
@@ -682,19 +682,32 @@ function PrintableView({ doc, client, settings, lang, t, onBack }: any) {
     return d.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
+  // Efecto para cambiar el título del documento y así nombrar el PDF automáticamente
+  useEffect(() => {
+    const originalTitle = document.title;
+    const typeName = doc.type === 'proforma' ? 'Proforma' : 'Recibo';
+    document.title = `${typeName} - ${client.name}`;
+    
+    return () => {
+      document.title = originalTitle; // Restaura el título original al salir
+    };
+  }, [doc, client]);
+
   return (
     <div className="max-w-[850px] mx-auto bg-white print:p-0 print:shadow-none animate-in fade-in duration-300">
       
-      {/* MAGIA CSS PARA OCULTAR FECHA, LINK Y NÚMERO DE PÁGINA DEL NAVEGADOR */}
+      {/* MAGIA CSS PARA OCULTAR FECHA, LINK Y NÚMERO DE PÁGINA DEL NAVEGADOR Y QUITAR MÁRGENES */}
       <style>
         {`
           @media print {
-            @page { margin: 0; } 
+            @page { margin: 0 !important; } 
             body { 
               -webkit-print-color-adjust: exact; 
               print-color-adjust: exact; 
               margin: 0;
+              padding: 0;
             }
+            .print-container { padding: 40px !important; }
           }
         `}
       </style>
@@ -705,17 +718,17 @@ function PrintableView({ doc, client, settings, lang, t, onBack }: any) {
         <button onClick={() => window.print()} className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-7 py-3 rounded-xl font-bold shadow-md shadow-blue-900/10 transition-all hover:shadow-lg"><Printer className="w-5 h-5 mr-2.5" /> {t.print}</button>
       </div>
 
-      {/* --- INICIO DEL DOCUMENTO A IMPRIMIR --- */}
-      <div className="relative bg-white min-h-[1056px] print:min-h-0 mx-auto box-border overflow-hidden rounded-xl print:rounded-none">
+      {/* --- INICIO DEL DOCUMENTO A IMPRIMIR (COMPACTO) --- */}
+      <div className="print-container relative bg-white min-h-[500px] print:min-h-0 mx-auto box-border overflow-hidden rounded-xl print:rounded-none">
         
-        {/* Usamos print:p-12 para dar margen interno ya que quitamos los márgenes de página arriba */}
-        <div className="p-12 md:p-16 print:p-12">
+        {/* Usamos un padding más pequeño (p-6) para ahorrar espacio vertical */}
+        <div className="p-8 md:p-10 print:p-6">
           
           {/* LÍNEA AZUL GRUESA SUPERIOR */}
-          <div className="h-2 w-full mb-8" style={{ backgroundColor: COLOR_BLUE }}></div>
+          <div className="h-2 w-full mb-6" style={{ backgroundColor: COLOR_BLUE }}></div>
 
-          {/* CABECERA: Info Empresa y Logo */}
-          <div className="flex justify-between items-start mb-14">
+          {/* CABECERA: Info Empresa y Logo (Márgenes reducidos) */}
+          <div className="flex justify-between items-start mb-6">
             <div className="text-sm font-medium space-y-0.5" style={{ color: "#777" }}>
               <p className="font-bold text-base mb-1" style={{ color: COLOR_BLUE }}>Diosko's Home Renovations LLC</p>
               {settings.email && <p>{settings.email}</p>}
@@ -723,16 +736,16 @@ function PrintableView({ doc, client, settings, lang, t, onBack }: any) {
             </div>
             <div>
               {settings.logoUrl ? (
-                <img src={settings.logoUrl} alt="Logo" className="w-32 h-auto object-contain" />
+                <img src={settings.logoUrl} alt="Logo" className="w-28 h-auto object-contain" />
               ) : (
-                <div className="text-xl font-black uppercase tracking-tight" style={{ color: COLOR_BLUE }}>Diosko's Home Renovations LLC</div>
+                <div className="text-lg font-black uppercase tracking-tight" style={{ color: COLOR_BLUE }}>Diosko's Home Renovations LLC</div>
               )}
             </div>
           </div>
 
-          {/* TÍTULO Y FECHA */}
-          <div className="mb-12">
-            <h2 className="text-3xl font-bold capitalize mb-1" style={{ color: COLOR_BLUE }}>
+          {/* TÍTULO Y FECHA (Márgenes reducidos) */}
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold capitalize mb-1" style={{ color: COLOR_BLUE }}>
               {doc.type === 'proforma' ? t.printQuoteLabel : t.printInvoiceLabel}
             </h2>
             <p className="text-xs font-semibold" style={{ color: COLOR_BLUE }}>
@@ -740,28 +753,28 @@ function PrintableView({ doc, client, settings, lang, t, onBack }: any) {
             </p>
           </div>
 
-          {/* INFO DEL CLIENTE */}
-          <div className="mb-12 text-sm">
+          {/* INFO DEL CLIENTE (Márgenes reducidos) */}
+          <div className="mb-6 text-sm">
             <p className="font-bold text-slate-700 mb-1">{doc.type === 'proforma' ? t.printQuoteFor : t.printInvoiceFor}</p>
             <p className="text-slate-500"><span className="mr-1">{t.printClientName}</span> {client.name}</p>
             {client.address && <p className="text-slate-500"><span className="mr-1">{t.printJobAddress}</span> {client.address}</p>}
           </div>
 
-          {/* TABLA DE ITEMS */}
+          {/* TABLA DE ITEMS (Padding interno reducido) */}
           <table className="w-full text-left border-collapse mb-1">
             <thead className="border-b-2" style={{ borderColor: COLOR_BLUE }}>
               <tr>
-                <th className="py-3 font-bold text-sm" style={{ color: COLOR_BLUE }}>{t.printDesc}</th>
-                <th className="py-3 font-bold text-sm text-right" style={{ color: COLOR_BLUE, width: '25%' }}>{t.printPrice}</th>
+                <th className="py-2 font-bold text-sm" style={{ color: COLOR_BLUE }}>{t.printDesc}</th>
+                <th className="py-2 font-bold text-sm text-right" style={{ color: COLOR_BLUE, width: '25%' }}>{t.printPrice}</th>
               </tr>
             </thead>
             <tbody className="text-sm">
               {doc.items.map((item: any, idx: number) => (
                 <tr key={idx} className={idx % 2 === 0 ? "bg-slate-50" : "bg-white"}>
-                  <td className="py-3 px-2 text-slate-800 font-medium">
+                  <td className="py-2 px-2 text-slate-800 font-medium">
                     {item.desc} {item.qty > 1 ? <span className="text-slate-500 ml-1">(x{item.qty})</span> : ''}
                   </td>
-                  <td className="py-3 px-2 text-slate-800 font-medium text-right">
+                  <td className="py-2 px-2 text-slate-800 font-medium text-right">
                     ${(item.qty * item.price).toFixed(2)}
                   </td>
                 </tr>
@@ -770,17 +783,17 @@ function PrintableView({ doc, client, settings, lang, t, onBack }: any) {
           </table>
           <div className="border-t mb-4" style={{ borderColor: '#e2e8f0' }}></div>
 
-          {/* SECCIÓN TOTALES */}
-          <div className="flex justify-end mb-16 pr-2">
+          {/* SECCIÓN TOTALES (Márgenes reducidos) */}
+          <div className="flex justify-end mb-6 pr-2">
             <div className="flex justify-between items-center w-64">
               <span className="text-base font-bold" style={{ color: COLOR_BLUE }}>{t.printTotal}</span>
               <span className="text-lg font-bold text-slate-900">${doc.total.toFixed(2)}</span>
             </div>
           </div>
 
-          {/* NOTAS Y TÉRMINOS */}
-          <div className="mt-8">
-            <h4 className="text-lg font-bold mb-3" style={{ color: COLOR_BLUE }}>{t.printNotesTitle}</h4>
+          {/* NOTAS (Márgenes reducidos) */}
+          <div className="mt-4 pt-4 border-t border-slate-200">
+            <h4 className="text-sm font-bold mb-2" style={{ color: COLOR_BLUE }}>{t.printNotesTitle}</h4>
             <ul className="text-slate-600 text-xs font-medium space-y-1 list-disc ml-5">
               <li>{t.printNotesDefault}</li>
               {doc.notes && <li>{doc.notes}</li>}
